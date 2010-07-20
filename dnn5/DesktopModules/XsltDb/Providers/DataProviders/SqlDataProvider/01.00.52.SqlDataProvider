@@ -1,0 +1,215 @@
+﻿if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_Configs]') is not null
+	drop table {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs];
+go
+
+create table {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs]
+(
+	ConfigID uniqueidentifier primary key default newid(),
+	IsSuper bit default 0,
+	XSLT nvarchar(max)
+);
+go
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]') is not null
+	drop table {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules];
+go
+
+create table {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]
+(
+		ModuleID int
+			primary key
+			constraint FK_{objectQualifier}Findy_XsltDb_Modules_ModuleRef
+				foreign key references {databaseOwner}[{objectQualifier}Modules](ModuleID)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE,
+		ConfigID uniqueidentifier
+			constraint FK_{objectQualifier}Findy_XsltDb_Modules_ConfigRef
+				foreign key references {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE
+);
+go
+
+select NEWID() ConfigID, ModuleID, XSLT
+into #t from {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody]
+
+insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID, IsSuper, XSLT)
+select ConfigID, 0, XSLT from #t
+
+insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules](ModuleID, ConfigID)
+select ModuleID, ConfigID from #t
+
+drop table #t;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_DeleteModule]') is not null
+	drop trigger {databaseOwner}[{objectQualifier}Findy_XsltDb_DeleteModule];
+go
+create trigger {databaseOwner}[{objectQualifier}Findy_XsltDb_DeleteModule]
+	on {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] after delete as
+begin
+	
+	delete {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs]
+	where not exists(
+		select * from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+		where m.ConfigID = {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs].ConfigID);
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_Select]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select]
+	@ModuleID int
+as
+begin
+	select c.XSLT from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+		on m.ConfigID = c.ConfigID
+	where m.ModuleID = @ModuleID
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_Select_AllForTab]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select_AllForTab];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select_AllForTab]
+	@TabID int
+as
+begin
+	select distinct m.ModuleID, c.XSLT, c.IsSuper
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+	join {databaseOwner}[{objectQualifier}TabModules] tm on tm.ModuleID = m.ModuleID
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c on c.ConfigID = m.ConfigID
+	where tm.TabID = @TabID;
+end;
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_GetModulesWithSameConfig]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}indy_XsltDb_GetModulesWithSameConfig];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetModulesWithSameConfig]
+	@ModuleID int
+as
+begin
+	select c.ModuleID from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] c on c.ConfigID = m.ConfigID
+	where m.ModuleID = @ModuleID
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_Save]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Save];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Save]
+	@ModuleID int,
+	@IsSuper bit,
+	@xslt nvarchar(max)
+as
+begin
+	if exists (select * from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] where ModuleID = @ModuleID)
+		update {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] set XSLT = @xslt, IsSuper = @IsSuper
+		where ConfigID = (select ConfigID from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] where ModuleID = @ModuleID)
+	else
+	begin
+		declare @ConfigID uniqueidentifier;
+		set @ConfigID = NEWID();
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID, IsSuper, XSLT) values(@ConfigID, @IsSuper, @xslt);
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules](ModuleID, ConfigID) values(@ModuleID, @ConfigID);
+	end;
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_AttachModuleToConfig]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_AttachModuleToConfig];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_AttachModuleToConfig]
+	@ModuleID int,
+	@ConfigID nvarchar(max)
+as
+begin
+	delete {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]
+	where ModuleID = @ModuleID;
+	
+	insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]
+	values(@ModuleID, @ConfigID);
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_GetAllConfigs]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetAllConfigs];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetAllConfigs]
+as
+begin
+	select c.ConfigID, m.ModuleID, m.ModuleTitle, tm.PaneName, t.TabName, t.Title TabTitle
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] fm on fm.ConfigID = c.ConfigID
+	join {databaseOwner}[{objectQualifier}Modules] m on m.ModuleID = fm.ModuleID
+	join {databaseOwner}[{objectQualifier}TabModules] tm on tm.ModuleID = fm.ModuleID
+	join {databaseOwner}[{objectQualifier}Tabs] t on t.TabID = tm.TabID;
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_Xsltdb_ImportModule]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_ImportModule];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_ImportModule]
+	@ModuleID int,
+	@data nvarchar(max)
+as
+begin
+	declare @xml xml;
+	set @xml = @data;
+	
+	declare @ConfigID uniqueidentifier;
+	declare @xslt nvarchar(max);
+	declare @IsSuper bit;
+	
+	select
+		@ConfigID = x.value('ConfigID[1]', 'uniqueidentifier'),
+		@xslt = x.value('XSLT[1]', 'nvarchar(max)'),
+		@IsSuper = x.value('IsSuper[1]', 'bit')
+	from @xml.nodes('/xsltdb') t(x);
+
+	delete {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]
+	where ModuleID = @ModuleID;
+
+	if @ConfigID is not null
+	begin
+		if not exists(select * from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] where ConfigID = @ConfigID)
+			insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID, IsSuper, XSLT)
+			values(@ConfigID, @IsSuper, @xslt);
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules](ModuleID, ConfigID)
+		values (@ModuleID, @ConfigID);
+	end;
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_Xsltdb_GetModuleData]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_GetModuleData];
+go
+create procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_GetModuleData]
+	@ModuleID int
+as
+begin
+	select c.ConfigID, c.IsSuper, c.XSLT
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+		on c.ConfigID = m.ConfigID
+	where m.ModuleID = @ModuleID
+	for xml path('xsltdb');	
+end;
+go
+
+
+drop table {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody];
+go

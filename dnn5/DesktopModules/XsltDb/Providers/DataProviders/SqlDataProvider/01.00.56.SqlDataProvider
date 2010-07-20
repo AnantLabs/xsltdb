@@ -1,0 +1,20 @@
+﻿alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetAllConfigs]
+as
+begin
+	select
+		c.ConfigID,
+		m.PortalID,
+		m.ModuleID,
+		m.ModuleTitle,
+		tm.PaneName,
+		t.TabName,
+		t.Title TabTitle,
+		'PortalName' PortalName
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] fm on fm.ConfigID = c.ConfigID
+	join {databaseOwner}[{objectQualifier}Modules] m on m.ModuleID = fm.ModuleID
+	join {databaseOwner}[{objectQualifier}TabModules] tm on tm.ModuleID = fm.ModuleID
+	join {databaseOwner}[{objectQualifier}Tabs] t on t.TabID = tm.TabID
+	join {databaseOwner}[{objectQualifier}Portals] p on p.PortalID = m.PortalID
+	order by m.PortalID;
+end;

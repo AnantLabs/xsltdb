@@ -1,0 +1,32 @@
+﻿IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_PortalSettings]') IS NOT NULL
+DROP TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_PortalSettings];
+GO
+
+CREATE TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_PortalSettings]
+(
+	PortalID int
+		primary key
+		constraint [FK_{objectQualifier}Findy_XsltDb_PortalSettings_PortalRef]
+			foreign key references {databaseOwner}[{objectQualifier}Portals](PortalID)
+			ON DELETE CASCADE
+			ON UPDATE CASCADE
+			NOT FOR REPLICATION,
+	xLogin nvarchar(max),
+	xDomain  nvarchar(max),
+	xPassword nvarchar(max),
+	dontImpersonate smallint default 0,
+	sqlConnectionString nvarchar(max)
+);
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_SelectPortalSettings]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_SelectPortalSettings];
+GO
+
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_SelectPortalSettings]
+	@PortalID int
+as
+begin
+	select * from {databaseOwner}[{objectQualifier}Findy_XsltDb_PortalSettings]
+	where PortalID = @PortalID;
+end;

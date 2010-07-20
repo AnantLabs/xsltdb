@@ -1,0 +1,10 @@
+﻿alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetAllConfigs]
+as
+begin
+	select c.ConfigID, c.Name, COUNT(*) TotalUsage
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	left join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m on m.ConfigID = c.ConfigID
+	where c.IsSuper = 1
+	group by c.ConfigID, c.Name
+	order by c.Name;
+end;

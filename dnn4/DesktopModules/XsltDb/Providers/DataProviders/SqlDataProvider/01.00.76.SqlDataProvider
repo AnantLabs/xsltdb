@@ -1,0 +1,12 @@
+﻿alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select]
+	@ModuleID int
+as
+begin
+	select c.XSLT, c.IsSuper from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+		on m.ConfigID = c.ConfigID
+	where m.ModuleID = @ModuleID;
+end;
+
+go
+

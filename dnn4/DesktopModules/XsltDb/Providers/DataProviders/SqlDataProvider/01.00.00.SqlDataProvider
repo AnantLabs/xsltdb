@@ -1,0 +1,47 @@
+﻿
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody]') IS NOT NULL
+DROP TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody];
+GO
+
+CREATE TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody]
+(
+	ModuleID int
+		primary key
+		constraint [FK_{objectQualifier}Findy_XsltDb_TransformBody_ModuleRef]
+			foreign key references {databaseOwner}[{objectQualifier}Modules](ModuleID)
+			ON DELETE CASCADE
+			ON UPDATE CASCADE
+			NOT FOR REPLICATION,
+	XSLT nvarchar(max)
+);
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Save]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Save];
+GO
+
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Save]
+	@ModuleID int,
+	@xslt nvarchar(max)
+as
+begin
+	if exists (select ModuleID from {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody] where ModuleID = @ModuleID)
+		update {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody] set xslt = @xslt where ModuleID = @ModuleID
+	else
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody] values(@ModuleID, @xslt)
+end;
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Select]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select];
+GO
+
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select]
+	@ModuleID int
+as
+begin
+	select xslt from {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody] where ModuleID = @ModuleID
+end;
+
+go
+
