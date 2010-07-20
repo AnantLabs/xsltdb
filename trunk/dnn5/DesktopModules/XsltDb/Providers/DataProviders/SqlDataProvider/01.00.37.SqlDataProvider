@@ -1,0 +1,43 @@
+﻿IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Files]') IS NOT NULL
+	drop table {databaseOwner}[{objectQualifier}Findy_XsltDb_Files];
+
+GO
+
+create table {databaseOwner}[{objectQualifier}Findy_XsltDb_Files]
+(
+	PortalID int,
+	FileID int identity primary key,
+	FilePath nvarchar(max)
+);
+
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Insert]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Insert];
+
+GO
+
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Insert]
+	@PortalID int,
+	@FilePath nvarchar(max)
+as
+begin
+	insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Files](FilePath, PortalID)
+	values(@FilePath, @PortalID);
+end;
+
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Delete]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Delete]
+
+GO
+
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Delete]
+	@PortalID int,
+	@FilePath nvarchar(max)
+as
+begin
+	delete {databaseOwner}[{objectQualifier}Findy_XsltDb_Files]
+	where FilePath = @FilePath and PortalID = @PortalID;
+end;

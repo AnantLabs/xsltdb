@@ -1,0 +1,13 @@
+﻿alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetServiceConfig]
+	@PortalID int,
+	@ServiceName nvarchar(max)
+as
+begin
+	select top 1 c.*, m.ModuleID from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m on m.ConfigID = c.ConfigID
+	join {databaseOwner}[{objectQualifier}Modules] dm on dm.ModuleID = m.ModuleID
+	where dm.PortalID = @PortalID
+	and c.ServiceName = @ServiceName;
+end;
+go
+

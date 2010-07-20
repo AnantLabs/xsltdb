@@ -1,0 +1,129 @@
+﻿alter table {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] add Draft nvarchar(max);
+go
+
+
+update {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] set Draft = XSLT;
+go
+
+
+alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select]
+	@ModuleID int
+as
+begin
+	select c.Draft, c.XSLT, c.IsSuper from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+		on m.ConfigID = c.ConfigID
+	where m.ModuleID = @ModuleID;
+end;
+go
+
+ALTER procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_GetModuleData]
+	@ModuleID int
+as
+begin
+	select c.ConfigID, c.IsSuper, c.XSLT, c.Draft
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+		on c.ConfigID = m.ConfigID
+	where m.ModuleID = @ModuleID
+	for xml path('xsltdb');	
+end;
+go
+
+
+ALTER procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_ImportModule]
+	@ModuleID int,
+	@data nvarchar(max)
+as
+begin
+	declare @xml xml;
+	set @xml = @data;
+	
+	declare @ConfigID uniqueidentifier;
+	declare @xslt nvarchar(max);
+	declare @draft nvarchar(max);
+	declare @IsSuper bit;
+	
+	select
+		@ConfigID = x.value('ConfigID[1]', 'uniqueidentifier'),
+		@xslt = x.value('XSLT[1]', 'nvarchar(max)'),
+		@draft = x.value('Draft[1]', 'nvarchar(max)'),
+		@IsSuper = x.value('IsSuper[1]', 'bit')
+	from @xml.nodes('/xsltdb') t(x);
+
+	delete {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]
+	where ModuleID = @ModuleID;
+
+	if @ConfigID is not null
+	begin
+		if not exists(select * from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] where ConfigID = @ConfigID)
+			insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID, IsSuper, XSLT, Draft)
+			values(@ConfigID, @IsSuper, @xslt, @draft);
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules](ModuleID, ConfigID)
+		values (@ModuleID, @ConfigID);
+	end;
+end;
+go
+
+
+ALTER procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Save]
+	@ModuleID int,
+	@IsSuper bit,
+	@xslt nvarchar(max)
+as
+begin
+	if exists (select * from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] where ModuleID = @ModuleID)
+		update {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] set Draft = @xslt, IsSuper = @IsSuper
+		where ConfigID = (select ConfigID from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] where ModuleID = @ModuleID)
+	else
+	begin
+		declare @ConfigID uniqueidentifier;
+		set @ConfigID = NEWID();
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID, IsSuper, Draft) values(@ConfigID, @IsSuper, @xslt);
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules](ModuleID, ConfigID) values(@ModuleID, @ConfigID);
+	end;
+end;
+go
+
+
+ALTER procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select]
+	@ModuleID int
+as
+begin
+	select c.XSLT, c.Draft, c.IsSuper from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+		on m.ConfigID = c.ConfigID
+	where m.ModuleID = @ModuleID;
+end;
+go
+
+
+ALTER procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select_AllForTab]
+	@TabID int
+as
+begin
+	select distinct m.ModuleID, c.XSLT, c.Draft, c.IsSuper
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+	join {databaseOwner}[{objectQualifier}TabModules] tm on tm.ModuleID = m.ModuleID
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c on c.ConfigID = m.ConfigID
+	where tm.TabID = @TabID;
+end;
+go
+
+
+if OBJECT_ID('{databaseOwner}[{objectQualifier}Findy_XsltDb_PublishAll]') is not null
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_PublishAll]
+go
+
+
+create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_PublishAll]
+	@PortalID int
+as
+begin
+	update {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs]
+	set XSLT = Draft
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m on m.ConfigID = c.ConfigID
+	join {databaseOwner}[{objectQualifier}Modules] dm on m.ModuleID = dm.ModuleID
+	where dm.PortalID = @PortalID;
+end;

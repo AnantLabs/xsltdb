@@ -1,0 +1,39 @@
+﻿create procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetServiceConfig]
+	@PortalID int,
+	@ServiceName nvarchar(max)
+as
+begin
+	select top 1 c.XSLT, m.ModuleID from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m on m.ConfigID = c.ConfigID
+	join {databaseOwner}[{objectQualifier}Modules] dm on dm.ModuleID = m.ModuleID
+	where dm.PortalID = @PortalID
+	and c.ServiceName = @ServiceName;
+end;
+go
+
+
+alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Save]
+	@ModuleID int,
+	@IsSuper bit,
+	@xslt nvarchar(max),
+	@name nvarchar(max),
+	@ServiceName nvarchar(max)
+as
+begin
+	if exists (select * from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] where ModuleID = @ModuleID)
+		update {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] set
+			Draft = @xslt,
+			IsSuper = @IsSuper,
+			Name = @name,
+			ServiceName = @ServiceName
+		where ConfigID = (select ConfigID from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] where ModuleID = @ModuleID)
+	else
+	begin
+		declare @ConfigID uniqueidentifier;
+		set @ConfigID = NEWID();
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID, IsSuper, XSLT, Draft, Name, ServiceName) values(@ConfigID, @IsSuper, @xslt, @xslt, @name, @ServiceName);
+		insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules](ModuleID, ConfigID) values(@ModuleID, @ConfigID);
+	end;
+end;
+go
+

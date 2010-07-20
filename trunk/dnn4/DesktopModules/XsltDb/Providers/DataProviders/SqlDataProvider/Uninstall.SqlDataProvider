@@ -1,0 +1,76 @@
+﻿IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Save]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Save]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Select]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_SelectPortalSettings]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_SelectPortalSettings];
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_AttachModuleToConfig]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_AttachModuleToConfig]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Delete]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Delete]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Insert]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Files_Insert]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_GetAllConfigs]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetAllConfigs]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_Xsltdb_GetModuleData]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_GetModuleData]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_GetModulesWithSameConfig]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetModulesWithSameConfig]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_Xsltdb_ImportModule]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_ImportModule]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Publish]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Publish]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_PublishAll]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_PublishAll]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Select_AllForTab]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select_AllForTab]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_GetServiceConfig]') IS NOT NULL
+	drop procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_GetServiceConfig]
+GO
+
+
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody]') IS NOT NULL
+	DROP TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_TransformBody]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_PortalSettings]') IS NOT NULL
+	DROP TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_PortalSettings]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]') IS NOT NULL
+	DROP TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Configs]') IS NOT NULL
+	DROP TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs]
+GO
+
+IF OBJECT_ID(N'{databaseOwner}[{objectQualifier}Findy_XsltDb_Files]') IS NOT NULL
+	DROP TABLE {databaseOwner}[{objectQualifier}Findy_XsltDb_Files]

@@ -1,0 +1,101 @@
+﻿alter table {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] add ServiceName nvarchar(64);
+go
+
+
+alter procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_GetModuleData]
+	@ModuleID int
+as
+begin
+
+	select convert(nvarchar(max), (
+		select c.ConfigID, c.IsSuper, c.ServiceName, c.XSLT, c.Draft
+		from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+		join {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+			on c.ConfigID = m.ConfigID
+		where m.ModuleID = @ModuleID
+		for xml raw('xsltdb'))) xsltdb;
+end;
+go
+
+
+alter procedure {databaseOwner}[{objectQualifier}Findy_Xsltdb_ImportModule]
+	@ModuleID int,
+	@data nvarchar(max)
+as
+begin
+
+	-- .NET allows TABs in attributes, but MS SQL threat them as a whitespace and replaces with single space.
+	-- This is due to compatibility issue, see http://msdn.microsoft.com/en-us/library/ms171744.aspx
+	set @data = replace(@data, CHAR(9), '&#x09;');
+
+	declare @xml xml;
+	set @xml = @data;
+	
+	declare @ConfigID uniqueidentifier;
+	declare @ServiceName nvarchar(max);
+	declare @xslt nvarchar(max);
+	declare @draft nvarchar(max);
+	declare @IsSuper bit;
+	
+	select
+		@ConfigID = x.value('@ConfigID', 'uniqueidentifier'),
+		@xslt = x.value('@XSLT', 'nvarchar(max)'),
+		@ServiceName = x.value('@ServiceName', 'nvarchar(max)'),
+		@draft = x.value('@Draft', 'nvarchar(max)'),
+		@IsSuper = x.value('@IsSuper', 'bit')
+	from @xml.nodes('/xsltdb') t(x);
+	
+	delete {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules]
+	where ModuleID = @ModuleID;
+
+	if @ConfigID is not null begin
+
+		if @IsSuper = 1 begin
+			-- Ensure Superconfigutation exists.
+			set @ConfigID = (select ConfigID from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] where ConfigID = @ConfigID);
+
+		end else begin
+
+			set @ConfigID = NEWID();
+			insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs](ConfigID, IsSuper, XSLT, Draft, ServiceName)
+			values(@ConfigID, @IsSuper, @xslt, @draft, @ServiceName);
+
+		end;
+		
+		if @ConfigID is not null begin
+
+			insert {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules](ModuleID, ConfigID)
+			values (@ModuleID, @ConfigID);
+
+		end;
+
+	end;
+end;
+go
+
+
+alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select]
+	@ModuleID int
+as
+begin
+	select c.XSLT, c.Draft, c.IsSuper, c.Name, c.ServiceName
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+		on m.ConfigID = c.ConfigID
+	where m.ModuleID = @ModuleID;
+end;
+go
+
+
+alter procedure {databaseOwner}[{objectQualifier}Findy_XsltDb_Select_AllForTab]
+	@TabID int
+as
+begin
+	select distinct m.ModuleID, c.XSLT, c.Draft, c.IsSuper, c.Name, c.ServiceName
+	from {databaseOwner}[{objectQualifier}Findy_XsltDb_Modules] m
+	join {databaseOwner}[{objectQualifier}TabModules] tm on tm.ModuleID = m.ModuleID
+	join {databaseOwner}[{objectQualifier}Findy_XsltDb_Configs] c on c.ConfigID = m.ConfigID
+	where tm.TabID = @TabID;
+end;
+go
+
